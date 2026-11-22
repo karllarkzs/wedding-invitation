@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { withIDo } from "@/components/ui/IDo";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -68,10 +69,10 @@ export function ChapterSpread({ numeral, title, when, text, photos, mirror = fal
           : [];
 
   return (
-    <article className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
+    <article className="grid items-center gap-5 sm:gap-8 md:grid-cols-2 md:gap-14">
       {/* Photos */}
       <Reveal className={mirror ? "md:order-2" : ""}>
-        <div className="relative mx-auto aspect-[10/9] w-full max-w-[330px] md:max-w-[440px]">
+        <div className="relative mx-auto aspect-[10/9] w-full max-w-[300px] sm:max-w-[330px] md:max-w-[440px]">
           {prints.length === 0 ? (
             <div aria-hidden="true" className={`${PRINT_FRAME} ${PRINTS.single}`}>
               <div className="deboss-well grid aspect-[4/5] place-items-center rounded-[2px]">
@@ -122,7 +123,7 @@ export function ChapterSpread({ numeral, title, when, text, photos, mirror = fal
         className={`text-center ${mirror ? "md:order-1 md:text-right" : "md:text-left"}`}
       >
         <p className="eyebrow">Chapter {numeral}</p>
-        <h3 className="mt-2 text-balance font-script text-[2.7rem] leading-[1.08] text-ink sm:text-[3.3rem]">{title}</h3>
+        <h3 className="mt-2 text-balance font-script text-[2.4rem] leading-[1.08] text-ink sm:text-[3.3rem]">{title}</h3>
         <div
           className={`mt-3 flex items-center justify-center gap-3 ${mirror ? "md:justify-end" : "md:justify-start"}`}
         >
@@ -133,7 +134,7 @@ export function ChapterSpread({ numeral, title, when, text, photos, mirror = fal
         <p
           className={`mx-auto mt-4 max-w-md text-[1.12rem] leading-relaxed text-ink-soft ${mirror ? "md:ml-auto md:mr-0" : "md:ml-0"}`}
         >
-          {text}
+          {withIDo(text)}
         </p>
         {count > 0 && (
           <button

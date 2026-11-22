@@ -77,8 +77,19 @@ export function RsvpForm({ weddingDate, contact }: Props) {
       );
       break;
     case "ready":
-      // keyed by code so the form starts from this guest's saved reply
-      body = <GuestForm key={invite.code} invite={invite} weddingDate={weddingDate} onSaved={saveReply} />;
+      body = invite.group !== "guest" ? (
+        <SeatSaved
+          group={invite.group}
+          name={invite.name}
+          plusOneName={invite.plusOneName}
+          role={invite.role}
+          weddingDate={weddingDate}
+          contact={contact}
+        />
+      ) : (
+        // keyed by code so the form starts from this guest's saved reply
+        <GuestForm key={invite.code} invite={invite} weddingDate={weddingDate} onSaved={saveReply} />
+      );
       break;
   }
 
@@ -94,6 +105,83 @@ export function RsvpForm({ weddingDate, contact }: Props) {
         {body}
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+/** Family and entourage don't RSVP: their link shows that their seat is already saved. */
+function SeatSaved({
+  group,
+  name,
+  plusOneName,
+  role,
+  weddingDate,
+  contact,
+}: {
+  group: "family" | "entourage";
+  name: string;
+  plusOneName: string;
+  role: string;
+  weddingDate: string;
+  contact: string;
+}) {
+  const lowerFirst = contact.charAt(0).toLowerCase() + contact.slice(1);
+  const who = group === "family" ? "You\u2019re family" : "You\u2019re part of our entourage";
+  return (
+    <div className="py-4 text-center">
+      <p className="eyebrow">Your invitation</p>
+      <InviteeNames name={name} plusOneName={plusOneName} />
+      <RoleBadge role={role} />
+      <div aria-hidden="true" className="mx-auto mt-6 h-px w-24 bg-gold/40" />
+      <WaxSeal className="mx-auto mt-8 size-20 drop-shadow-[0_8px_10px_rgba(74,24,33,0.3)]" />
+      <h3 className="mt-6 font-script text-[2.7rem] leading-tight text-ink">
+        {plusOneName ? "Your seats are saved" : "Your seat is saved"}
+      </h3>
+      <p className="mx-auto mt-3 max-w-sm text-balance text-[1.15rem] leading-relaxed text-ink-soft">
+        {plusOneName
+          ? `${who}, so there\u2019s no need to RSVP. We\u2019ve already saved both of your seats, and we can\u2019t wait to celebrate with you on ${weddingDate}.`
+          : `${who}, so there\u2019s no need to RSVP. We\u2019ve already saved your seat, and we can\u2019t wait to celebrate with you on ${weddingDate}.`}
+      </p>
+      <p className="mx-auto mt-4 max-w-sm text-[1rem] text-ink-soft">If your plans change, {lowerFirst}</p>
+    </div>
+  );
+}
+
+/**
+ * Who the invitation is for. A pair is shown as equals: both names in the
+ * same script and size, joined by a gold "&".
+ */
+function InviteeNames({ name, plusOneName }: { name: string; plusOneName: string }) {
+  if (!plusOneName) {
+    return <p className="mt-2 text-balance font-script text-[2.6rem] leading-[1.1] text-ink">{name}</p>;
+  }
+  return (
+    <p className="mt-2 text-balance font-script text-[2.25rem] leading-[1.1] text-ink">
+      <span className="block">{name}</span>
+      <span aria-hidden="true" className="block py-1 text-[1.6rem] leading-none text-gold-deep">
+        &amp;
+      </span>
+      <span className="sr-only"> and </span>
+      <span className="block">{plusOneName}</span>
+    </p>
+  );
+}
+
+/** Their part in the wedding (from the Role column), e.g. "Principal Sponsors". */
+function RoleBadge({ role }: { role: string }) {
+  if (!role) return null;
+  const diamond = (
+    <svg viewBox="0 0 8 8" aria-hidden="true" className="size-[0.4rem] shrink-0 text-gold">
+      <path d="M4 0 8 4 4 8 0 4Z" fill="currentColor" />
+    </svg>
+  );
+  return (
+    <p className="mt-4 flex justify-center">
+      <span className="inline-flex max-w-full items-center gap-2.5 rounded-[1.3rem] bg-candle-soft px-5 py-2 text-balance font-display text-[0.74rem] font-semibold uppercase leading-snug tracking-[0.2em] text-gold-deep shadow-[inset_0_0_0_1px_rgba(180,152,103,0.55),0_8px_18px_-12px_rgba(132,105,62,0.55)]">
+        {diamond}
+        <span>{role}</span>
+        {diamond}
+      </span>
+    </p>
   );
 }
 
@@ -209,8 +297,15 @@ const PLUS_ONE = [
   { value: "no", label: "Just me", icon: HEART },
 ] as const;
 
-function initialValues(reply: SavedReply | null): Values {
-  if (!reply) return { attending: "", plusOne: "", plusOneName: "", message: "", website: "" };
+/** When the +1 is already known, the question is about them by name. */
+const PLUS_ONE_KNOWN = [
+  { value: "yes", label: "Yes, we\u2019ll both be there", icon: PLUS_ONE[0].icon },
+  { value: "no", label: "Just me", icon: HEART },
+] as const;
+
+/** Starts from the saved reply, or (first time) with the known +1's name already filled in. */
+function initialValues(reply: SavedReply | null, knownPlusOne: string): Values {
+  if (!reply) return { attending: "", plusOne: "", plusOneName: knownPlusOne, message: "", website: "" };
   return {
     attending: reply.attending,
     plusOne: reply.attending === "yes" ? (reply.plusOneName ? "yes" : "no") : "",
@@ -229,7 +324,7 @@ function GuestForm({
   weddingDate: string;
   onSaved: (reply: SavedReply) => void;
 }) {
-  const [values, setValues] = useState<Values>(() => initialValues(invite.reply));
+  const [values, setValues] = useState<Values>(() => initialValues(invite.reply, invite.plusOneName));
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -383,10 +478,11 @@ function GuestForm({
             {/* Who this invitation is for */}
             <div className="text-center">
               <p className="eyebrow">Your invitation</p>
-              <p className="mt-2 text-balance font-script text-[2.6rem] leading-[1.1] text-ink">{invite.name}</p>
-              {invite.plusOne && (
+              <InviteeNames name={invite.name} plusOneName={invite.plusOneName} />
+              {!invite.plusOneName && invite.plusOne && (
                 <p className="mt-2 text-[1.02rem] italic text-ink-soft">You&rsquo;re welcome to bring a +1.</p>
               )}
+              <RoleBadge role={invite.role} />
               {invite.reply && (
                 <p className="mx-auto mt-4 max-w-sm rounded-xl bg-candle-soft px-4 py-2.5 text-[1rem] leading-snug text-ink">
                   You&rsquo;ve already replied. You can change your answer below anytime.
@@ -420,8 +516,8 @@ function GuestForm({
                   <div className="pt-7">
                     <Choice
                       name="plusOne"
-                      legend="Will you bring a +1?"
-                      options={PLUS_ONE}
+                      legend={invite.plusOneName ? `Will ${invite.plusOneName} be joining you?` : "Will you bring a +1?"}
+                      options={invite.plusOneName ? PLUS_ONE_KNOWN : PLUS_ONE}
                       value={values.plusOne}
                       onChange={(v) => set("plusOne", v)}
                       error={errors.plusOne}

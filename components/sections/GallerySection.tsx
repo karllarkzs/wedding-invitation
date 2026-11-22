@@ -12,7 +12,7 @@ export function GallerySection({ images, teaser }: { images: string[]; teaser: T
   if (images.length === 0 && !teaserReady && !wedding.gallery.showWhenEmpty) return null;
 
   return (
-    <section id="gallery" aria-labelledby="gallery-title" className="px-4 py-20 sm:py-28">
+    <section id="gallery" aria-labelledby="gallery-title" className="px-4 py-16 sm:py-28">
       <SectionHeading id="gallery-title" title={wedding.gallery.title} subtitle="moments we'll treasure" />
       {(images.length > 0 || wedding.gallery.showWhenEmpty) && (
         <Gallery images={images} names={coupleNames} monogram={monogramText} caption={wedding.gallery.caption} />

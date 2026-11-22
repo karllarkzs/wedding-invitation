@@ -7,7 +7,9 @@ import { WaveDivider } from "@/components/art/Ornaments";
 import { InvitationShell } from "@/components/InvitationShell";
 import { Countdown } from "@/components/sections/Countdown";
 import { DressCode } from "@/components/sections/DressCode";
+import { Entourage } from "@/components/sections/Entourage";
 import { Footer } from "@/components/sections/Footer";
+import { Gifts } from "@/components/sections/Gifts";
 import { GallerySection } from "@/components/sections/GallerySection";
 import { Hero } from "@/components/sections/Hero";
 import { Journey } from "@/components/sections/Journey";
@@ -57,7 +59,9 @@ export default function Home() {
         <WaveDivider />
         <Venues photos={venuePhotos} />
         <Program />
+        <Entourage />
         <DressCode />
+        <Gifts />
         <WaveDivider />
         <Rsvp />
       </main>

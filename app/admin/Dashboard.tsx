@@ -13,10 +13,27 @@ const canShareNow = () => typeof navigator.share === "function";
 const cannotShareOnServer = () => false;
 type Filter = "all" | "yes" | "no" | "waiting";
 
-const STATUS_ORDER = { yes: 0, no: 1, waiting: 2 } as const;
-const STATUS_LABEL = { yes: "Coming", no: "Declined", waiting: "Waiting" } as const;
+/** "people, incl. 3 family, 8 entourage and 2 +1s" */
+function comingHint(family: number, entourage: number, plusOnes: number) {
+  const parts = [
+    family && `${family} family`,
+    entourage && `${entourage} entourage`,
+    plusOnes && `${plusOnes} +1${plusOnes === 1 ? "" : "s"}`,
+  ].filter(Boolean) as string[];
+  if (!parts.length) return "people";
+  const last = parts.pop();
+  return `people, incl. ${parts.length ? `${parts.join(", ")} and ${last}` : last}`;
+}
+
+/** Who counts as coming: guests who accepted, plus family and entourage (no RSVP needed). */
+const isComing = (r: AdminRow) => r.status === "yes" || r.status === "family" || r.status === "entourage";
+
+const STATUS_ORDER = { yes: 0, family: 1, entourage: 2, no: 3, waiting: 4 } as const;
+const STATUS_LABEL = { yes: "Coming", family: "Family", entourage: "Entourage", no: "Declined", waiting: "Waiting" } as const;
 const STATUS_STYLE = {
   yes: "bg-sage-wash text-sage-deep",
+  family: "bg-sage-wash text-sage-deep shadow-[inset_0_0_0_1px_rgba(95,120,95,0.45)]",
+  entourage: "bg-sage-wash text-sage-deep shadow-[inset_0_0_0_1px_rgba(95,120,95,0.45)]",
   no: "bg-pearl text-ink-soft",
   waiting: "bg-candle-soft text-gold-deep",
 } as const;
@@ -41,10 +58,12 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
 
   const totals = useMemo(() => {
     const listed = rows.filter((r) => r.onList);
-    const coming = rows.filter((r) => r.status === "yes");
+    const coming = rows.filter(isComing);
     return {
       people: coming.length + coming.filter((r) => r.plusOneName).length,
       plusOnes: coming.filter((r) => r.plusOneName).length,
+      family: listed.filter((r) => r.status === "family").length,
+      entourage: listed.filter((r) => r.status === "entourage").length,
       declined: rows.filter((r) => r.status === "no").length,
       waiting: rows.filter((r) => r.status === "waiting").length,
       invited: listed.length,
@@ -55,9 +74,9 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const filtered = rows.filter((r) => {
-      if (filter !== "all" && r.status !== filter) return false;
+      if (filter === "yes" ? !isComing(r) : filter !== "all" && r.status !== filter) return false;
       if (!q) return true;
-      return [r.name, r.plusOneName, r.message].some((v) => v.toLowerCase().includes(q));
+      return [r.name, r.role, r.plusOneName, r.expectedPlusOne, r.message].some((v) => v.toLowerCase().includes(q));
     });
     const dir = sort.dir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
@@ -145,13 +164,24 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
         <>
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
             {[
-              { label: "Coming", value: totals.people, hint: totals.plusOnes ? `people, incl. ${totals.plusOnes} +1s` : "people" },
+              {
+                label: "Coming",
+                value: totals.people,
+                hint: comingHint(totals.family, totals.entourage, totals.plusOnes),
+              },
               { label: "Declined", value: totals.declined, hint: "guests" },
               { label: "Waiting", value: totals.waiting, hint: "no reply yet" },
               {
                 label: "Invited",
                 value: totals.invited,
-                hint: totals.plusOnesAllowed ? `guests, ${totals.plusOnesAllowed} with a +1` : "guests",
+                hint: [
+                  "guests",
+                  totals.family && `${totals.family} family`,
+                  totals.entourage && `${totals.entourage} entourage`,
+                  totals.plusOnesAllowed && `${totals.plusOnesAllowed} with a +1`,
+                ]
+                  .filter(Boolean)
+                  .join(", "),
               },
             ].map((t) => (
               <div key={t.label} className="paper-card px-3 py-5 text-center sm:py-7">
@@ -240,6 +270,9 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
                       <td className="px-4 py-3">
                         <span className="font-semibold">{r.name}</span>
                         <span className="mt-1 flex flex-wrap gap-1.5">
+                          {r.role && (
+                            <span className="rounded-full bg-ivory-deep px-2 py-0.5 text-xs font-semibold text-ink-soft">{r.role}</span>
+                          )}
                           {r.onList && r.plusOneAllowed && (
                             <span className="rounded-full bg-candle-soft px-2 py-0.5 text-xs font-semibold text-gold-deep">+1 allowed</span>
                           )}
@@ -253,7 +286,16 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
                           {STATUS_LABEL[r.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-ink-soft">{r.plusOneName || "—"}</td>
+                      <td className="px-4 py-3 text-ink-soft">
+                        {r.plusOneName ||
+                          (r.expectedPlusOne ? (
+                            <span className="italic text-ink-soft/70" title="Named on the guest list; not replied yet">
+                              {r.expectedPlusOne}
+                            </span>
+                          ) : (
+                            "—"
+                          ))}
+                      </td>
                       <td className="px-4 py-3 text-ink-soft">{r.message || "—"}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm tabular-nums text-ink-soft">{r.repliedAt || "—"}</td>
                       <td className="px-4 py-3">

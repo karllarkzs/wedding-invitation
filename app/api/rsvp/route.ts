@@ -7,6 +7,8 @@ import { SheetsNotConfiguredError, demoMode, findInvite, saveRsvp } from "@/lib/
 const json = (body: RsvpResponse, init?: ResponseInit) => NextResponse.json(body, init);
 
 const NOT_FOUND = "We couldn't find your invitation. Please use the personal link we sent you.";
+/** Family and entourage don't RSVP. */
+const NO_RSVP = "There's no need to reply: your seat is already saved.";
 
 export async function POST(request: Request) {
   // 1. Rate limit: 6 replies per 10 minutes per IP.
@@ -46,6 +48,7 @@ export async function POST(request: Request) {
   if (demoMode()) {
     const guest = DEMO_GUESTS.find((g) => g.code === code);
     if (!guest) return json({ ok: false, error: NOT_FOUND }, { status: 404 });
+    if (guest.group !== "guest") return json({ ok: false, error: NO_RSVP }, { status: 422 });
     const plusOne = plusOneError(guest, rsvp);
     if (plusOne) return json({ ok: false, error: plusOne, fieldErrors: { plusOne } }, { status: 422 });
     console.warn("[rsvp] Google Sheets env vars missing — reply NOT saved (development preview).", { ...rsvp, code });
@@ -56,6 +59,7 @@ export async function POST(request: Request) {
     const found = await findInvite(code);
     if (!found) return json({ ok: false, error: NOT_FOUND }, { status: 404 });
     const { guest, reply } = found;
+    if (guest.group !== "guest") return json({ ok: false, error: NO_RSVP }, { status: 422 });
     const plusOne = plusOneError(guest, rsvp);
     if (plusOne) return json({ ok: false, error: plusOne, fieldErrors: { plusOne } }, { status: 422 });
 

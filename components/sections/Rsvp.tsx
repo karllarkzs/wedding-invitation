@@ -4,10 +4,11 @@ import { Eucalyptus } from "@/components/art/Eucalyptus";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RsvpForm } from "./RsvpForm";
+import { RsvpIntro } from "./RsvpIntro";
 
 export function Rsvp() {
   return (
-    <section id="rsvp" aria-labelledby="rsvp-title" className="relative px-4 py-20 sm:py-28">
+    <section id="rsvp" aria-labelledby="rsvp-title" className="relative px-4 py-16 sm:py-28">
       <div
         aria-hidden="true"
         className="candle-glow left-1/2 top-1/2 size-[min(140vw,860px)] -translate-x-1/2 -translate-y-1/2"
@@ -16,7 +17,7 @@ export function Rsvp() {
         id="rsvp-title"
         title="RSVP"
         subtitle="Will you join us?"
-        intro={<p>It would mean the world to have you with us. Please let us know by {formatDate(wedding.rsvpDeadline)}.</p>}
+        intro={<RsvpIntro deadline={formatDate(wedding.rsvpDeadline)} />}
       />
 
       <Reveal className="relative mx-auto mt-10 max-w-lg">

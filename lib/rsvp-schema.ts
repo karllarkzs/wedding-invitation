@@ -71,9 +71,26 @@ export function fieldErrorsFrom(error: z.ZodError): FieldErrors {
 /** A guest's saved answer, used to pre-fill the form when they open their link again. */
 export type SavedReply = { attending: "yes" | "no"; plusOneName: string; message: string };
 
+/**
+ * Which group a guest is in (the Group column of the Guests tab). Family and
+ * entourage don't RSVP: their seat is saved automatically.
+ */
+export type GuestGroup = "guest" | "family" | "entourage";
+
 /** What /api/invite returns for a personal link. */
 export type InviteLookup =
-  | { ok: true; name: string; plusOne: boolean; reply: SavedReply | null; demo?: boolean }
+  | {
+      ok: true;
+      name: string;
+      plusOne: boolean;
+      /** The +1's name if it's already known ("" if not). */
+      plusOneName: string;
+      group: GuestGroup;
+      /** Their part in the wedding (e.g. "Principal Sponsors"), "" if none. */
+      role: string;
+      reply: SavedReply | null;
+      demo?: boolean;
+    }
   | { ok: false; error: string };
 
 /** What /api/rsvp returns to the form. */

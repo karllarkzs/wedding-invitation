@@ -11,7 +11,8 @@ const NOT_FOUND = "We couldn't find this invitation link.";
 
 /**
  * Looks up a personal invitation link (/?i=CODE): the guest's name, whether
- * they may bring a +1, and their saved reply. Only ever reveals that one guest.
+ * they may bring a +1, their group (family and entourage don't RSVP), their role
+ * in the wedding, and their saved reply. Only ever reveals that one guest.
  */
 export async function GET(request: Request) {
   // Plenty for a guest opening their link a few times; too slow to guess codes.
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
   if (demoMode()) {
     const guest = DEMO_GUESTS.find((g) => g.code === code);
     return guest
-      ? json({ ok: true, name: guest.name, plusOne: guest.plusOne, reply: null, demo: true })
+      ? json({ ok: true, name: guest.name, plusOne: guest.plusOne, plusOneName: guest.plusOneName, group: guest.group, role: guest.role, reply: null, demo: true })
       : json({ ok: false, error: NOT_FOUND }, 404);
   }
 
@@ -36,6 +37,9 @@ export async function GET(request: Request) {
       ok: true,
       name: guest.name,
       plusOne: guest.plusOne,
+      plusOneName: guest.plusOneName,
+      group: guest.group,
+      role: guest.role,
       reply: reply
         ? { attending: reply.attending ? "yes" : "no", plusOneName: reply.plusOneName, message: reply.message }
         : null,

@@ -2,17 +2,20 @@ import "server-only";
 import { google, type sheets_v4 } from "googleapis";
 import { localTimestamp } from "./datetime";
 import { newInviteCode } from "./invites";
-import { normalizeCode, type Rsvp } from "./rsvp-schema";
+import { normalizeCode, type GuestGroup, type Rsvp } from "./rsvp-schema";
 
 /**
  * Two tabs in one Google Sheet:
- * - "Guests": your guest list. You fill in Name and Plus One (Yes/No); the site
- *   fills in each guest's personal Code the first time you open /admin.
+ * - "Guests": your guest list. You fill in Name, Plus One (Yes/No), Plus One
+ *   Name (if you already know who it is), and Group (Guest, Family or
+ *   Entourage: family and entourage don't RSVP, their seat is saved automatically);
+ *   the site fills in each guest's personal Code when you press Refresh in /admin.
+ *   Role (optional) is shown on their invitation, e.g. "Principal Sponsors".
  * - "RSVPs": the replies, one row per guest (updated in place if they change it).
  */
 export const GUESTS_TAB = "Guests";
 export const SHEET_TAB = "RSVPs";
-const GUEST_HEADERS = ["Name", "Plus One", "Code"];
+const GUEST_HEADERS = ["Name", "Plus One", "Plus One Name", "Group", "Code", "Role"];
 const RSVP_HEADERS = ["Timestamp", "Name", "Attending", "Plus One", "Message", "Code"];
 const range = (tab: string, a1: string) => `'${tab}'!${a1}`;
 
@@ -79,7 +82,7 @@ let tabsReady: Promise<void> | null = null;
 
 /**
  * Creates the "Guests" and "RSVPs" tabs and their header rows if they don't
- * exist yet. A new Guests tab gets a Yes/No dropdown in its Plus One column.
+ * exist yet. A new Guests tab gets dropdowns: Yes/No for Plus One, Guest/Family/Entourage for Group.
  */
 function ensureTabs(): Promise<void> {
   if (!tabsReady) {
@@ -100,33 +103,30 @@ function ensureTabs(): Promise<void> {
           ?.map((r) => r.addSheet?.properties)
           .find((p) => p?.title === GUESTS_TAB)?.sheetId;
         if (guestsSheetId != null) {
+          const dropdown = (column: number, options: string[]) => ({
+            setDataValidation: {
+              range: { sheetId: guestsSheetId, startRowIndex: 1, startColumnIndex: column, endColumnIndex: column + 1 },
+              rule: {
+                condition: { type: "ONE_OF_LIST", values: options.map((o) => ({ userEnteredValue: o })) },
+                showCustomUi: true,
+                strict: false,
+              },
+            },
+          });
           await sheets.spreadsheets.batchUpdate({
             spreadsheetId,
-            requestBody: {
-              requests: [
-                {
-                  setDataValidation: {
-                    range: { sheetId: guestsSheetId, startRowIndex: 1, startColumnIndex: 1, endColumnIndex: 2 },
-                    rule: {
-                      condition: { type: "ONE_OF_LIST", values: [{ userEnteredValue: "Yes" }, { userEnteredValue: "No" }] },
-                      showCustomUi: true,
-                      strict: false,
-                    },
-                  },
-                },
-              ],
-            },
+            requestBody: { requests: [dropdown(1, ["Yes", "No"]), dropdown(3, ["Guest", "Family", "Entourage"])] },
           });
         }
       }
 
       const heads = await sheets.spreadsheets.values.batchGet({
         spreadsheetId,
-        ranges: [range(GUESTS_TAB, "A1:C1"), range(SHEET_TAB, "A1:F1")],
+        ranges: [range(GUESTS_TAB, "A1:F1"), range(SHEET_TAB, "A1:F1")],
       });
       const empty = (i: number) => (heads.data.valueRanges?.[i]?.values?.[0] ?? []).every((c) => !String(c ?? "").trim());
       const data = [
-        empty(0) && { range: range(GUESTS_TAB, "A1:C1"), values: [GUEST_HEADERS] },
+        empty(0) && { range: range(GUESTS_TAB, "A1:F1"), values: [GUEST_HEADERS] },
         empty(1) && { range: range(SHEET_TAB, "A1:F1"), values: [RSVP_HEADERS] },
       ].filter(Boolean) as sheets_v4.Schema$ValueRange[];
       if (data.length) {
@@ -142,24 +142,42 @@ function ensureTabs(): Promise<void> {
 
 // ─── Guests ────────────────────────────────────────────────────────────────
 
-export type Guest = { row: number; name: string; plusOne: boolean; code: string };
+export type Guest = {
+  row: number;
+  name: string;
+  plusOne: boolean;
+  /** The +1's name, when it's already known (shown with the guest's name, and pre-filled on the RSVP). */
+  plusOneName: string;
+  group: GuestGroup;
+  code: string;
+  /** Their part in the wedding, shown on the invitation ("" if none), e.g. "Best Man". */
+  role: string;
+};
 
 const cell = (v: unknown) => String(v ?? "").trim();
+const yes = (v: unknown) => /^(y|yes|true|1|✓|✔)/i.test(cell(v));
+/** "Family" (or a Yes from the older Family column) and "Entourage"; anything else is a regular guest. */
+const groupOf = (v: unknown): GuestGroup =>
+  /^(f|y|true|1|✓|✔)/i.test(cell(v)) ? "family" : /^e/i.test(cell(v)) ? "entourage" : "guest";
 
 function parseGuests(values: unknown[][] | null | undefined): Guest[] {
   return (values ?? [])
     .map((r, i) => ({
       row: i + 2,
       name: cell(r[0]).replace(/\s+/g, " "),
-      plusOne: /^(y|yes|true|1|✓|✔)/i.test(cell(r[1])),
-      code: normalizeCode(cell(r[2])) ?? "",
+      // a known +1 name means a +1 is allowed, even if Plus One was left blank
+      plusOne: yes(r[1]) || Boolean(cell(r[2])),
+      plusOneName: cell(r[2]).replace(/\s+/g, " "),
+      group: groupOf(r[3]),
+      code: normalizeCode(cell(r[4])) ?? "",
+      role: cell(r[5]).replace(/\s+/g, " "),
     }))
     .filter((g) => g.name);
 }
 
 async function readGuests(): Promise<Guest[]> {
   const { sheets, spreadsheetId } = getClient();
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: range(GUESTS_TAB, "A2:C") });
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: range(GUESTS_TAB, "A2:F") });
   return parseGuests(res.data.values);
 }
 
@@ -194,7 +212,7 @@ export async function assignMissingCodes(): Promise<number> {
     spreadsheetId,
     requestBody: {
       valueInputOption: "RAW",
-      data: needsCode.map((g) => ({ range: range(GUESTS_TAB, `C${g.row}`), values: [[g.code]] })),
+      data: needsCode.map((g) => ({ range: range(GUESTS_TAB, `E${g.row}`), values: [[g.code]] })),
     },
   });
   return needsCode.length;
@@ -239,7 +257,7 @@ export async function findInvite(code: string): Promise<{ guest: Guest; reply: R
   const { sheets, spreadsheetId } = getClient();
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId,
-    ranges: [range(GUESTS_TAB, "A2:C"), range(SHEET_TAB, "A2:F")],
+    ranges: [range(GUESTS_TAB, "A2:F"), range(SHEET_TAB, "A2:F")],
   });
   const guest = parseGuests(res.data.valueRanges?.[0]?.values).find((g) => g.code === code);
   if (!guest) return null;

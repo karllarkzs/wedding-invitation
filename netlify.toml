@@ -7,3 +7,6 @@
 [build.environment]
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
+  # The site address is public by design (it's built into the pages for link
+  # previews), so Netlify's secrets scan shouldn't fail the build over it.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SITE_URL"

@@ -1,5 +1,5 @@
 import { wedding } from "@/config/wedding.config";
-import { formatTime, mapsEmbedUrl, mapsSearchUrl } from "@/lib/datetime";
+import { formatTime, mapsSearchUrl } from "@/lib/datetime";
 import { Flourish } from "@/components/art/Ornaments";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -59,26 +59,13 @@ function VenueCard({ venue, photoAvailable, delay }: { venue: Venue; photoAvaila
           {venue.address}
         </address>
 
-        {/* the map, framed like a postcard */}
-        <div className="mt-auto pt-7">
-          <div className="rounded-[18px] bg-white p-1.5 shadow-[0_14px_28px_-20px_rgba(70,63,82,0.5),inset_0_0_0_1px_rgba(180,152,103,0.3)]">
-            <div className="overflow-hidden rounded-[13px] bg-ivory">
-              <iframe
-                title={`Map showing ${venue.name}`}
-                src={mapsEmbedUrl(venue.name, venue.address)}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="block h-52 w-full border-0 [filter:grayscale(0.55)_sepia(0.22)_contrast(0.96)_brightness(1.04)]"
-                allowFullScreen
-              />
-            </div>
-          </div>
-
+        {/* directions open in the guest's maps app (no embedded map: lighter and shorter on phones) */}
+        <div className="mt-auto pt-6">
           <a
             href={mapsSearchUrl(venue.name, venue.address)}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-outline mt-6"
+            className="btn btn-outline"
           >
             <svg
               viewBox="0 0 24 24"
@@ -102,7 +89,7 @@ function VenueCard({ venue, photoAvailable, delay }: { venue: Venue; photoAvaila
 
 export function Venues({ photos }: { photos: { ceremony: boolean; reception: boolean } }) {
   return (
-    <section id="venues" aria-labelledby="venues-title" className="band band-ivory px-4 py-20 sm:py-28">
+    <section id="venues" aria-labelledby="venues-title" className="band band-ivory px-4 py-16 sm:py-28">
       <SectionHeading id="venues-title" title="Ceremony & Reception" subtitle="where to find us" />
 
       <div className="mx-auto mt-12 grid max-w-5xl gap-8 md:grid-cols-2 md:gap-10">

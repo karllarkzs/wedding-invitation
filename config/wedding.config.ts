@@ -25,7 +25,7 @@ export const wedding = {
   city: "Lapu-Lapu City, Cebu",
 
   /** Last day to RSVP (YYYY-MM-DD). */
-  rsvpDeadline: "2026-12-01",
+  rsvpDeadline: "2026-12-10",
 
   /**
    * The day your story began (YYYY-MM-DD). Used for the "Ten Years of Us"
@@ -71,32 +71,115 @@ export const wedding = {
     { time: "10:00 PM", title: "Send-off", detail: "One last cheer for the newlyweds", icon: "sparkle" },
   ],
 
+  /**
+   * The entourage, shown after the Order of the Day. Parents and grandmothers
+   * show first; "View the full entourage" opens the rest. Any part left empty
+   * ([] or "") is hidden.
+   */
+  entourage: {
+    parents: {
+      groom: ["Atty. Felix Alvin B. Melecio", "Mrs. Hedy C. Melecio"],
+      bride: ["Mr. Alvin O. Capoy", "Mrs. Maita B. Capoy"],
+    },
+    grandmothers: {
+      groom: { name: "Regina B. Melecio", assistedBy: "Frances Abeguelle M. Cane" },
+      bride: { name: "Lelita C. Batucan", assistedBy: "Catherine B. Batucan" },
+    },
+    /** One pair per line: [gentleman, lady] */
+    principalSponsors: [
+      ["Cong. Junard “Ahong” Q. Chan", "Mayor Ma. Cynthia “Cindi” K. Chan"],
+      ["Eng’r. Jose Orlando D. Carungay", "Ms. Grace Mary C. Carungay"],
+      ["Eng’r. Ronald G. Chan", "Ms. Grace S. Chan"],
+      ["Dr. Pherdes E. Galbo", "Ms. Michelle Catherine C. Galbo"],
+      ["PGen. Jason L. Capoy", "Atty. Rachel G. Alburo"],
+      ["Ret. Gen. Arnel U. Peralta", "Ms. Elizabeth B. Peralta"],
+      ["Atty. Jessie L. Capoy", "Ms. Katrina G. Capoy"],
+      ["Mr. Eric O. Capoy", "Ms. Genie L. Capoy"],
+      ["Dr. Oscar C. Tagalog", "Ms. Zisa Belen I. Borata"],
+      ["Mr. Dante T. Diaz", "Ms. Gracela U. Diaz"],
+      ["Eng’r. Bronson N. Peña", "Ms. Darlene Dale P. Peña"],
+      ["Eng’r. Ronnie M. Pacifico", "Eng’r. Susan L. Pacifico"],
+      ["Eng’r. Darwin G. Tapia", "Ms. Estrella T. Delfin"],
+      ["Mr. Albert Cahigas", "Ms. Amiephil C. Cahigas"],
+      ["Mr. Ronald C. Florentino", "Ms. Rubelita B. Florentino"],
+      ["Mr. Russell D. Almaden", "Ms. Roquesa B. Almaden"],
+      ["Eng’r. Ferdinand E. Nicanor", "Eng’r. Carmenita Rosario A. Nicanor"],
+      ["Eng’r. Ceferino F. Peralta", "Ms. Luella A. Peralta"],
+      ["Mr. Clive E. Cane", "Ms. Ester M. Cane"],
+      ["Mr. Edgar A. Etang", "Ms. Mercy M. Etang"],
+    ] as [string, string][],
+    bestMan: ["Krist Andre C. Melecio"],
+    maidOfHonor: ["Raven Kaye B. Florentino"],
+    secondarySponsors: {
+      candle: ["Romeo John P. Reyes", "Michelle Mae C. Mendezona"],
+      veil: ["Aaron Dave B. Almaden", "Coney Marie B. Batucan"],
+      cord: ["Jifford C. Cahigas", "Elaine O. Capoy"],
+    },
+    groomsmen: [
+      "Francis Nico M. Cane",
+      "Johncel T. Jubay",
+      "Kenn Neween M. Etang",
+      "John Bernard S. Santalisis",
+      "Ivan Clark M. Gomez",
+      "James Dominic J. Ybanez",
+      "Joseph Earl V. Subelario",
+    ],
+    bridesmaids: [
+      "Bernadith A. Batucan",
+      "Angelika Joy C. Cahigas",
+      "Rijean E. Angtud",
+      "Katrine S. Ybanez",
+      "Lokelani Devon R. Rozano",
+      "Kristel Anne R. Tuastumban",
+      "Evelyn B. Tero",
+    ],
+    bearers: {
+      ring: ["Rowan Gabriel B. Florentino"],
+      coin: ["Klyde Elydom M. Etang"],
+      bible: ["Keian Kevin M. Etang"],
+    },
+    flowerGirls: ["Danielle Catherine A. Batucan", "Franceis Reg M. Cane", "Kaisha Mae L. Capoy"],
+    littleBrides: ["Erika Shane L. Capoy", "Soohee"],
+    offertory: {
+      bread: ["Erwin N. Cortes", "Eva V. Cortes"],
+      fruits: ["Brian M. Soroño", "Nerissa A. Soroño"],
+      wine: ["Sean Patrick T. Tan", "Kamelle Reigh E. Tan"],
+    },
+  },
+
   dressCode: {
     title: "Semi-Formal",
     description:
-      "We'd love to see you in semi-formal attire in shades of yellow and blue, from soft butter and champagne to deep navy.",
+      "We kindly request our guests to wear semi-formal attire in accordance with our wedding colors. We encourage attire that complements our wedding colors.",
     note: "Kindly save white and ivory for the bride.",
     /**
-     * Sample outfits, two for her and two for him.
-     * `look` picks the illustration: butterDress · blueSlip · butterShirt · blueBarong
+     * Outfit ideas, drawn as illustrations, with what to wear in words under
+     * each group. Pick looks from:
+     * blueGown · blueSuit · butterOneShoulder · creamBarong ·
+     * blueHighLow · blueShirt · butterTiered · butterShirt
      */
-    looks: {
-      her: {
-        hint: "Midi or flowy dresses",
-        items: [
-          { look: "butterDress", name: "Butter midi dress" },
-          { look: "blueSlip", name: "Dusty blue slip dress" },
+    lineups: [
+      {
+        label: "Principal Sponsors",
+        looks: ["blueGown", "blueSuit", "butterOneShoulder", "creamBarong"],
+        attire: [
+          { label: "Ladies", text: "Long gown or midi dress" },
+          { label: "Gentlemen", text: "Blue or cream barong, or a suit" },
         ],
       },
-      him: {
-        hint: "Long sleeves or a barong. No suit needed.",
-        items: [
-          { look: "butterShirt", name: "Butter long sleeves & navy trousers" },
-          { look: "blueBarong", name: "Dusty blue barong" },
+      {
+        label: "Guests",
+        looks: ["blueHighLow", "blueShirt", "butterTiered", "butterShirt"],
+        attire: [
+          { label: "Ladies", text: "Midi dress" },
+          { label: "Gentlemen", text: "Long sleeves" },
         ],
       },
-    },
-    /** Color families shown as swatches. Keep each family to about 3 colors. */
+    ],
+    /**
+     * Wedding colors, shown as one row of circles (a small gap between
+     * families). Names are read out to screen readers.
+     */
     palette: [
       {
         label: "Shades of yellow",
@@ -115,6 +198,26 @@ export const wedding = {
         ],
       },
     ],
+  },
+
+  /** A short note about gifts, shown after the dress code. Set message to "" to hide it. */
+  gifts: {
+    title: "Note on Gifts",
+    message:
+      "We are grateful for your love and support. Your presence means everything to us. If you wish to give a gift, a monetary offering would be warmly appreciated.",
+    /**
+     * QR codes for sending a gift, tucked behind a quiet "View gift details"
+     * link under the message. Images live in /public/images/gifts/ (clean
+     * redraws of the bank QRs: no names or numbers). Empty list = no link.
+     */
+    details: {
+      accountName: "KHwedding",
+      qrCodes: [
+        { label: "GCash", image: "/images/gifts/gcash.png" },
+        { label: "BPI", image: "/images/gifts/bpi.png" },
+        { label: "Security Bank", image: "/images/gifts/securitybank.png" },
+      ],
+    },
   },
 
   story: {

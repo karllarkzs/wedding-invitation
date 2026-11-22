@@ -139,10 +139,6 @@ export const monogramText = wedding.couple.monogram.replace(/\s*&\s*/, "\u2004&"
 
 export const yearsTogether = yearsBetween(wedding.relationshipStart, wedding.date);
 
-export function mapsEmbedUrl(name: string, address: string) {
-  return `https://maps.google.com/maps?q=${encodeURIComponent(`${name}, ${address}`)}&z=15&output=embed`;
-}
-
 export function mapsSearchUrl(name: string, address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name}, ${address}`)}`;
 }

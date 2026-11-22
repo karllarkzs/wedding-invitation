@@ -291,6 +291,40 @@
   .link-hairline:hover {
     background-size: 40% 1px;
   }
+  /* "I do" — set in gold script on a soft candle-yellow swipe (see IDo.tsx) */
+  .i-do {
+    position: relative;
+    z-index: 0;
+    font-family: var(--font-script);
+    font-style: normal;
+    font-size: 1.7em;
+    line-height: 0; /* keeps the sentence's line spacing */
+    color: var(--color-gold-deep);
+    white-space: nowrap;
+    padding: 0 0.12em;
+    view-timeline: --i-do;
+  }
+  /* the brush stroke behind the words */
+  .i-do::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 46% -0.04em 14% 0.02em;
+    border-radius: 0.55em 0.2em 0.5em 0.25em;
+    background: linear-gradient(90deg, rgb(246 227 168 / 0.95), rgb(246 227 168 / 0.75));
+    transform: rotate(-2.5deg);
+    transform-origin: left center;
+  }
+  /* where the browser supports it, the stroke is painted in as it scrolls into view */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .i-do::before {
+        animation: i-do-swipe linear both;
+        animation-timeline: --i-do;
+        animation-range: entry 60% cover 45%;
+      }
+    }
+  }
 
   /* ─── Buttons ────────────────────────────────────────────────────────── */
   .btn {
@@ -370,6 +404,14 @@
   }
 }
 
+@keyframes i-do-swipe {
+  from {
+    transform: rotate(-2.5deg) scaleX(0);
+  }
+  to {
+    transform: rotate(-2.5deg) scaleX(1);
+  }
+}
 @keyframes pearl-drift {
   0% {
     transform: translate3d(-2%, 0, 0) rotate(0deg) scale(1);
@@ -389,12 +431,125 @@
     transform: translate3d(18%, 0, 0);
   }
 }
+/* starts from rest, so the flower doesn't jump when breathing begins */
 @keyframes flower-breathe {
   from {
-    transform: rotate(-1.6deg) scale(1);
+    transform: rotate(0deg) scale(1);
   }
   to {
-    transform: rotate(1.6deg) scale(1.025);
+    transform: rotate(2.4deg) scale(1.025);
+  }
+}
+
+/* ─── Opening (BloomIntro) ──────────────────────────────────────────────
+   Every movement in the opening is a CSS transform/opacity animation, so
+   phones run it on the graphics chip: it stays smooth even while the rest
+   of the page is still loading. Delays and offsets come from CSS variables
+   set on each element. */
+
+/* the paper flower: inner rings open first, outer rings after */
+.pf-ring {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: pf-bloom 1.9s cubic-bezier(0.16, 1, 0.3, 1) calc(0.1s + var(--o) * 0.13s) both;
+}
+.paper-flower[data-stage="scatter"] .pf-ring {
+  animation: pf-scatter 1.05s cubic-bezier(0.4, 0, 0.2, 1) calc(var(--i) * 0.05s) both;
+}
+@keyframes pf-bloom {
+  from {
+    opacity: 0;
+    transform: scale(var(--bud)) rotate(-26deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+@keyframes pf-scatter {
+  from {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: scale(var(--burst)) rotate(var(--spin));
+  }
+}
+
+/* card, its lines, the greeting and the open button rise into place */
+.intro-rise {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: intro-rise var(--dur, 0.9s) cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0s) both;
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--from-y, 8px)) scale(var(--from-scale, 1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.intro-overlay[data-leaving] .intro-leave {
+  animation: intro-leave 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes intro-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(var(--leave-y, 0px)) scale(var(--leave-scale, 1));
+  }
+}
+
+/* loose petals drift in around the flower, and puff away on opening */
+.intro-petal {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: intro-petal 1.8s cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0s) both;
+}
+.intro-overlay[data-leaving] .intro-petal {
+  animation: intro-petal-out 0.6s ease both;
+}
+@keyframes intro-petal {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) rotate(calc(var(--rot) - 40deg));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotate(var(--rot));
+  }
+}
+@keyframes intro-petal-out {
+  from {
+    opacity: 1;
+    transform: rotate(var(--rot)) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(var(--rot)) scale(1.3);
+  }
+}
+
+/* the wax seal pops in with a little overshoot */
+.intro-seal {
+  opacity: 0;
+  animation: intro-seal 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 2.45s both;
+}
+@keyframes intro-seal {
+  from {
+    opacity: 0;
+    scale: 0.6;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
   }
 }
 @keyframes petal-sway {
@@ -463,5 +618,13 @@
   .teaser-drift,
   .teaser-halo {
     animation: none;
+  }
+  /* the opening simply appears, already open */
+  .pf-ring,
+  .intro-rise,
+  .intro-petal,
+  .intro-seal {
+    animation: none;
+    opacity: 1;
   }
 }

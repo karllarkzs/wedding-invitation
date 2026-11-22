@@ -65,7 +65,8 @@ export function Hero() {
               <p className="font-script text-[2.1rem] leading-none text-gold-deep">{monogramText}</p>
               <p className="eyebrow mt-6">{wedding.hero.openingLine}</p>
 
-              <h1 id="hero-names" className="mt-4 font-script leading-[1] text-ink">
+              {/* focusable so "Back to top" can bring keyboard focus here */}
+              <h1 id="hero-names" tabIndex={-1} className="mt-4 font-script leading-[1] text-ink outline-none">
                 <span className="block text-[4.6rem] sm:text-[5.4rem]">
                   <InkReveal delay={0.35}>{partnerOne}</InkReveal>
                 </span>

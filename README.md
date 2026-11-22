@@ -4,8 +4,8 @@ A mobile-first wedding invitation website with a built-in RSVP system.
 
 - **Next.js 16** (App Router), **TypeScript**, **Tailwind CSS v4**, **Framer Motion**
 - A "Save the Date" opening: a paper flower blooms behind the card; tap the wax seal (or **Open invitation**) and the petals scatter to reveal the site
-- Hero invitation card, live countdown, our story, a **Ten Years of Us** timeline, a prenup gallery, ceremony and reception cards with maps, the program, the dress code, the RSVP form and a footer
-- **Personal invitation links**: each guest gets their own link that greets them by name, and only guests you allow see a **+1** option
+- Hero invitation card, live countdown, our story, a **Ten Years of Us** timeline, a prenup gallery, ceremony and reception cards with "Open in Maps" directions, the program, the dress code, the RSVP form and a footer
+- **Personal invitation links**: each guest gets their own link with their name on the RSVP, and only guests you allow see a **+1** option
 - RSVPs are saved to **Google Sheets**, next to your guest list. A password-protected **/admin** page shows who's coming, who hasn't replied, and each guest's link to copy
 - Link previews for Messenger and Viber, an "Add to calendar" file, and a wax-seal app icon
 - All artwork (paper flower and petals, sculpted frames, eucalyptus, wax seal, ornaments, icons) is original inline SVG, generated in code
@@ -25,7 +25,7 @@ npm run dev
 
 Open http://localhost:3000. On your phone, open `http://<your-computer's-LAN-IP>:3000` while on the same Wi-Fi.
 
-> **Preview mode:** until the Google Sheets variables are set, you can try personal links locally with two sample guests: http://localhost:3000/?i=DEMO1 (Maria, allowed a +1) and http://localhost:3000/?i=DEMO2 (Juan, no +1). Replies show the confirmation with a note that they weren't saved. The sample guests never work on the live site.
+> **Preview mode:** until the Google Sheets variables are set, you can try personal links locally with four sample guests: http://localhost:3000/?i=DEMO1 (Maria, allowed a +1), http://localhost:3000/?i=DEMO2 (Juan, no +1), http://localhost:3000/?i=DEMO3 (Lola Rosa, family) and http://localhost:3000/?i=DEMO4 (Paolo Reyes, entourage). Replies show the confirmation with a note that they weren't saved. The sample guests never work on the live site.
 
 ---
 
@@ -37,10 +37,12 @@ Everything lives in **`config/wedding.config.ts`**:
 | --- | --- |
 | Names and monogram | `couple` |
 | Date, timezone, RSVP deadline | `date`, `timezone`, `rsvpDeadline` |
+| Entourage (parents, grandmothers, principal and secondary sponsors, best man and maid of honor, groomsmen and bridesmaids, bearers, flower girls, little brides, offertory) | `entourage`. Shown after the Order of the Day: parents and grandmothers first, the rest behind "View the full entourage". Empty roles are hidden. |
 | Ceremony and reception (name, address, time, photo) | `ceremony`, `reception` |
 | Arrival and parking note | `venueNote` |
 | Program (time, title, detail, icon) | `program` |
 | Dress code and color swatches | `dressCode` |
+| Note on gifts, and the gift QR codes behind "View gift details" | `gifts`. The QR images are in `public/images/gifts/`: clean redraws of the bank QRs (same payment data, no names or numbers printed around them). Guests can save each one to upload in their bank app. Empty `qrCodes` hides the link. |
 | Our story paragraphs | `story.paragraphs` |
 | **Ten Years of Us** chapters (title, years, text, photo folder) | `journey.chapters` |
 | The day your relationship began (used to compute "10 years") | `relationshipStart` |
@@ -79,7 +81,8 @@ The site writes RSVPs to a Google Sheet using a **service account**, a robot Goo
 2. Copy the **sheet ID** from the URL:
    `https://docs.google.com/spreadsheets/d/`**`1AbC…xyz`**`/edit` (the part in bold).
 3. You don't need to add columns. The first time you open /admin, the app creates two tabs:
-   - **`Guests`**: your guest list, with columns `Name | Plus One | Code`. You fill in **Name** (written the way you'd like it to appear, e.g. "Tita Marites" or "Maria Santos") and **Plus One** (Yes or No, from a dropdown). Leave **Code** empty: the app fills it in.
+   - **`Guests`**: your guest list, with columns `Name | Plus One | Plus One Name | Group | Code | Role`. You fill in **Name** (written the way you'd like it to appear, e.g. "Tita Marites" or "Maria Santos"), **Plus One** (Yes or No), **Plus One Name** (if you already know who it is: shown next to the guest's name and pre-filled on the RSVP) and **Group** (Guest, Family or Entourage), from dropdowns. Leave **Code** empty: the app fills it in. **Role** is optional: whatever you write there (e.g. "Principal Sponsors", "Best Man") is shown as a small gold badge under their name in the RSVP section.
+   - **Family** and **Entourage** don't need to RSVP: their link shows their name in the RSVP section and tells them their seat is already saved ("You're family…" or "You're part of our entourage…"). They're counted as coming in /admin. Leaving Group empty means a regular guest.
    - **`RSVPs`**: the replies, `Timestamp | Name | Attending | Plus One | Message | Code`. The site fills this in; Plus One holds the +1's name.
 
 ### 4.2 Create a Google Cloud project
@@ -126,15 +129,15 @@ Restart `npm run dev`, open /admin, add yourself to the Guests tab, press Refres
 
 Visit **`/admin`** and sign in with `ADMIN_PASSWORD`.
 
-- Totals at the top: **coming** (people, including +1s), **declined**, **waiting** (no reply yet) and **invited**
+- Totals at the top: **coming** (people, including family, entourage and +1s), **declined**, **waiting** (no reply yet) and **invited**
 - One row per guest: their reply, their +1's name, their note, and when they replied. **Search** (name, +1, note), **filter** (All / Coming / Declined / Waiting) and **sort** by Guest, Reply or Replied
 - **Copy link** copies the guest's personal link to paste into Messenger or Viber (on a phone there's also a **Share** button). Links use `NEXT_PUBLIC_SITE_URL` (or the Netlify address), so they point at the live site.
 - **Open Google Sheet** opens the spreadsheet. **Refresh** re-reads it, and gives any newly added guest their personal link.
 
 ### Sending invitations
-1. Add each guest to the **Guests** tab (Name, and Plus One: Yes or No).
+1. Add each guest to the **Guests** tab (Name, Plus One: Yes or No, and Group: Guest, Family or Entourage).
 2. Open **/admin** and press **Refresh**. Every new guest gets a random 6-character code, like `K7F2QX`. (Codes are only created when you press Refresh, so the link you copy never changes afterwards.)
-3. Press **Copy link** next to a guest and send it to them. Their link opens with "Dear Maria Santos," and their name already on the RSVP.
+3. Press **Copy link** next to a guest and send it to them. Their link opens with their name already on the RSVP.
 
 How +1s are enforced: whether a guest may bring a +1 comes only from the Guests tab, checked on the server. Guests without one never see the option, and a reply that tries to add one anyway is refused. Someone who opens the plain site link (without a code) can see the invitation, but the RSVP asks them to use their personal link. To change a guest's +1, change their Plus One cell; their link stays the same. If a link is ever shared by mistake, clear that guest's Code cell and press Refresh to give them a new one (the old link stops working).
 

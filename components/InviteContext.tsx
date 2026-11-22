@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { InviteLookup, SavedReply } from "@/lib/rsvp-schema";
+import type { GuestGroup, InviteLookup, SavedReply } from "@/lib/rsvp-schema";
 
 /** Who this page was opened for, from the personal link's ?i=CODE. */
 export type Invite =
@@ -10,7 +10,19 @@ export type Invite =
   /** The plain site link, without a personal code. */
   | { status: "none" }
   | { status: "loading"; code: string }
-  | { status: "ready"; code: string; name: string; plusOne: boolean; reply: SavedReply | null; demo: boolean }
+  | {
+      status: "ready";
+      code: string;
+      name: string;
+      plusOne: boolean;
+      /** The +1's name if already known ("" if not). */
+      plusOneName: string;
+      group: GuestGroup;
+      /** Their part in the wedding (e.g. "Best Man"), "" if none. */
+      role: string;
+      reply: SavedReply | null;
+      demo: boolean;
+    }
   /** A code that isn't on the guest list. */
   | { status: "invalid"; code: string }
   | { status: "error"; code: string; message: string };
@@ -50,7 +62,17 @@ export function InviteProvider({ children }: { children: React.ReactNode }) {
         const data = (await res.json().catch(() => null)) as InviteLookup | null;
         if (cancelled) return;
         if (data?.ok) {
-          setSettled({ status: "ready", code, name: data.name, plusOne: data.plusOne, reply: data.reply, demo: Boolean(data.demo) });
+          setSettled({
+            status: "ready",
+            code,
+            name: data.name,
+            plusOne: data.plusOne,
+            plusOneName: data.plusOneName,
+            group: data.group,
+            role: data.role ?? "",
+            reply: data.reply,
+            demo: Boolean(data.demo),
+          });
         } else if (res.status === 404) {
           setSettled({ status: "invalid", code });
         } else {

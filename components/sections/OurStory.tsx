@@ -13,7 +13,7 @@ export function OurStory({ photoAvailable }: { photoAvailable: boolean }) {
   const { story, couple } = wedding;
 
   return (
-    <section id="story" aria-labelledby="story-title" className="px-4 py-20 sm:py-28">
+    <section id="story" aria-labelledby="story-title" className="px-4 py-16 sm:py-28">
       <SectionHeading id="story-title" title={story.title} subtitle="how it all began" />
 
       <div className="mx-auto mt-16 grid max-w-4xl items-center gap-14 md:grid-cols-[340px_1fr] md:gap-16">

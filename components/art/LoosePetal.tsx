@@ -1,16 +1,20 @@
 import { LOOSE_PETAL } from "./petals";
 
-/** A single ivory paper petal (uses the shared defs from <SvgDefs />). */
+/**
+ * A single ivory paper petal (uses the shared gradients from <SvgDefs />).
+ * Its soft shadow is two faded copies of the petal rather than a blur filter,
+ * which keeps it cheap to draw and move on phones.
+ */
 export function LoosePetal({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg viewBox="-60 -112 120 120" aria-hidden="true" focusable="false" className={className} style={style}>
-      <g filter="url(#pf-shadow)">
-        <path d={LOOSE_PETAL.d} fill="url(#pf-light)" />
-        <path d={LOOSE_PETAL.d} fill="url(#pf-side)" />
-        <path d={LOOSE_PETAL.veins} fill="none" stroke="#B9A07A" strokeOpacity="0.14" strokeWidth="0.8" />
-        <path d={LOOSE_PETAL.d} fill="none" stroke="#FFFFFF" strokeOpacity="0.6" strokeWidth="1.2" />
-        <path d={LOOSE_PETAL.d} fill="none" stroke="#A88E66" strokeOpacity="0.18" strokeWidth="0.7" />
-      </g>
+    <svg viewBox="-60 -112 120 120" aria-hidden="true" focusable="false" className={`overflow-visible ${className}`} style={style}>
+      <path d={LOOSE_PETAL.d} transform="translate(0 4)" fill="#5E4A2C" fillOpacity="0.09" />
+      <path d={LOOSE_PETAL.d} transform="translate(0 8) scale(1.03)" fill="#5E4A2C" fillOpacity="0.05" />
+      <path d={LOOSE_PETAL.d} fill="url(#pf-light)" />
+      <path d={LOOSE_PETAL.d} fill="url(#pf-side)" />
+      <path d={LOOSE_PETAL.veins} fill="none" stroke="#B9A07A" strokeOpacity="0.14" strokeWidth="0.8" />
+      <path d={LOOSE_PETAL.d} fill="none" stroke="#FFFFFF" strokeOpacity="0.6" strokeWidth="1.2" />
+      <path d={LOOSE_PETAL.d} fill="none" stroke="#A88E66" strokeOpacity="0.18" strokeWidth="0.7" />
     </svg>
   );
 }

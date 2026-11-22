@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Cartouche } from "@/components/art/Cartouche";
+import { withIDo } from "@/components/ui/IDo";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -22,9 +23,17 @@ const nowInSeconds = () => Math.floor(Date.now() / 1000);
 const serverNow = () => null;
 
 /** A number that rolls softly when it changes. */
-function Rolling({ value, className = "" }: { value: string; className?: string }) {
+function Rolling({
+  value,
+  className = "",
+}: {
+  value: string;
+  className?: string;
+}) {
   return (
-    <span className={`relative inline-block overflow-hidden align-bottom ${className}`}>
+    <span
+      className={`relative inline-block overflow-hidden align-bottom ${className}`}
+    >
       <AnimatePresence mode="popLayout" initial={false}>
         <motion.span
           key={value}
@@ -48,18 +57,40 @@ export function Countdown({ target, googleCalendarUrl, dateLabel }: Props) {
   const married = remaining === 0;
 
   const units = [
-    { label: "Days", value: remaining === null ? null : Math.floor(remaining / 86400) },
-    { label: "Hours", value: remaining === null ? null : Math.floor((remaining % 86400) / 3600) },
-    { label: "Minutes", value: remaining === null ? null : Math.floor((remaining % 3600) / 60) },
+    {
+      label: "Days",
+      value: remaining === null ? null : Math.floor(remaining / 86400),
+    },
+    {
+      label: "Hours",
+      value: remaining === null ? null : Math.floor((remaining % 86400) / 3600),
+    },
+    {
+      label: "Minutes",
+      value: remaining === null ? null : Math.floor((remaining % 3600) / 60),
+    },
   ];
   const seconds = remaining === null ? null : remaining % 60;
 
   return (
-    <section id="countdown" aria-labelledby="countdown-title" className="band band-candle px-4 pb-24 pt-20 sm:pb-28 sm:pt-24">
+    <section
+      id="countdown"
+      aria-labelledby="countdown-title"
+      className="band band-candle px-4 pb-20 pt-16 sm:pb-28 sm:pt-24"
+    >
       {married ? (
-        <SectionHeading id="countdown-title" eyebrow={dateLabel} title="We're married!" subtitle="Thank you for celebrating with us." />
+        <SectionHeading
+          id="countdown-title"
+          eyebrow={dateLabel}
+          title="We're married!"
+          subtitle="Thank you for celebrating with us."
+        />
       ) : (
-        <SectionHeading id="countdown-title" title="Countdown" subtitle="until we say I do" />
+        <SectionHeading
+          id="countdown-title"
+          title="Countdown"
+          subtitle={withIDo("until we say I do")}
+        />
       )}
 
       {!married && (
@@ -74,10 +105,24 @@ export function Countdown({ target, googleCalendarUrl, dateLabel }: Props) {
             className="mx-auto mt-10 flex max-w-md justify-center gap-3 sm:gap-6"
           >
             {units.map((u, i) => (
-              <Reveal key={u.label} delay={0.1 + i * 0.14} y={26} className="w-[30%] max-w-[8.5rem]">
+              <Reveal
+                key={u.label}
+                delay={0.1 + i * 0.14}
+                y={26}
+                className="w-[30%] max-w-[8.5rem]"
+              >
                 <Cartouche paper className="w-full">
-                  <span className="font-display text-[clamp(1.6rem,7.6vw,2.4rem)] font-semibold leading-none text-gold-deep" aria-hidden="true">
-                    <Rolling value={u.value === null ? "—" : String(u.value).padStart(2, "0")} />
+                  <span
+                    className="font-display text-[clamp(1.6rem,7.6vw,2.4rem)] font-semibold leading-none text-gold-deep"
+                    aria-hidden="true"
+                  >
+                    <Rolling
+                      value={
+                        u.value === null
+                          ? "—"
+                          : String(u.value).padStart(2, "0")
+                      }
+                    />
                   </span>
                   <span className="mt-1 font-display text-[clamp(0.52rem,2.3vw,0.66rem)] font-semibold tracking-[0.18em] text-ink-soft">
                     {u.label.toUpperCase()}
@@ -88,10 +133,17 @@ export function Countdown({ target, googleCalendarUrl, dateLabel }: Props) {
           </div>
 
           <Reveal delay={0.5} className="mt-6 text-center">
-            <p className="text-[1.15rem] italic text-ink-soft" aria-hidden="true">
+            <p
+              className="text-[1.15rem] italic text-ink-soft"
+              aria-hidden="true"
+            >
               and{" "}
               <span className="font-display not-italic font-semibold text-gold-deep">
-                <Rolling value={seconds === null ? "—" : String(seconds).padStart(2, "0")} />
+                <Rolling
+                  value={
+                    seconds === null ? "—" : String(seconds).padStart(2, "0")
+                  }
+                />
               </span>{" "}
               seconds
             </p>
@@ -109,7 +161,11 @@ export function Countdown({ target, googleCalendarUrl, dateLabel }: Props) {
                 Google
                 <span className="sr-only">Calendar (opens in a new tab)</span>
               </a>
-              <a className="btn btn-outline px-5 font-display tracking-[0.16em]" href="/calendar.ics" download>
+              <a
+                className="btn btn-outline px-5 font-display tracking-[0.16em]"
+                href="/calendar.ics"
+                download
+              >
                 Apple · Outlook
               </a>
             </div>

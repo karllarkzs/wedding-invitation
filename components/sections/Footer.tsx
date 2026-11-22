@@ -4,6 +4,7 @@ import { Filigree } from "@/components/art/Filigree";
 import { LoosePetal } from "@/components/art/LoosePetal";
 import { WaxSeal } from "@/components/art/WaxSeal";
 import { WaveDivider } from "@/components/art/Ornaments";
+import { BackToTop } from "@/components/ui/BackToTop";
 import { InkReveal } from "@/components/ui/InkReveal";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -38,6 +39,8 @@ export function Footer() {
           </p>
           <p className="mt-6 text-[1.05rem] italic text-ink-soft">Ten years of us, and forever to go.</p>
         </Reveal>
+
+        <BackToTop className="mt-12" />
       </div>
     </footer>
   );

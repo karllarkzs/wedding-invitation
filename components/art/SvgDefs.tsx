@@ -20,9 +20,6 @@ export function SvgDefs() {
           <stop offset="0.7" stopColor="#B9A07A" stopOpacity="0" />
           <stop offset="1" stopColor="#B9A07A" stopOpacity="0.16" />
         </linearGradient>
-        <filter id="pf-shadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="7" stdDeviation="10" floodColor="#5E4A2C" floodOpacity="0.28" />
-        </filter>
 
         {/* sculpted (plaster) ornaments */}
         <linearGradient id="ct-fill" x1="0" y1="0" x2="1" y2="1">
