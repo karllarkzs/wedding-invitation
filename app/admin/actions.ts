@@ -12,7 +12,7 @@ import {
   passwordMatches,
 } from "@/lib/auth";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { assignMissingCodes } from "@/lib/sheets";
+import { assignMissingCodes, syncSavedSeats } from "@/lib/sheets";
 
 export type LoginState = { error: string | null };
 
@@ -46,13 +46,18 @@ export async function logout() {
   redirect("/admin");
 }
 
-/** Refresh in /admin: gives guests added to the sheet since last time their personal link code. */
-export async function createMissingLinks(): Promise<{ added: number; error: string | null }> {
-  if (!(await isAdmin())) return { added: 0, error: "Please sign in again." };
+/**
+ * Refresh in /admin: gives guests added to the sheet since last time their
+ * personal link code, and lists family and entourage in the RSVPs tab.
+ */
+export async function createMissingLinks(): Promise<{ added: number; seatsAdded: number; seatsRemoved: number; error: string | null }> {
+  if (!(await isAdmin())) return { added: 0, seatsAdded: 0, seatsRemoved: 0, error: "Please sign in again." };
   try {
-    return { added: await assignMissingCodes(), error: null };
+    const added = await assignMissingCodes();
+    const seats = await syncSavedSeats();
+    return { added, seatsAdded: seats.added, seatsRemoved: seats.removed, error: null };
   } catch (err) {
-    console.error("[admin] Failed to create links:", err);
-    return { added: 0, error: "Couldn't update the Google Sheet. Please try again." };
+    console.error("[admin] Failed to refresh:", err);
+    return { added: 0, seatsAdded: 0, seatsRemoved: 0, error: "Couldn't update the Google Sheet. Please try again." };
   }
 }

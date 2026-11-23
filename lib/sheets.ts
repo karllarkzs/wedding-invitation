@@ -12,11 +12,14 @@ import { normalizeCode, type GuestGroup, type Rsvp } from "./rsvp-schema";
  *   the site fills in each guest's personal Code when you press Refresh in /admin.
  *   Role (optional) is shown on their invitation, e.g. "Principal Sponsors".
  * - "RSVPs": the replies, one row per guest (updated in place if they change it).
+ *   Refresh also lists family and entourage there as coming (they don't reply),
+ *   and the Group column labels every row: Guest, Family or Entourage.
  */
 export const GUESTS_TAB = "Guests";
 export const SHEET_TAB = "RSVPs";
 const GUEST_HEADERS = ["Name", "Plus One", "Plus One Name", "Group", "Code", "Role"];
-const RSVP_HEADERS = ["Timestamp", "Name", "Attending", "Plus One", "Message", "Code"];
+const RSVP_HEADERS = ["Timestamp", "Name", "Attending", "Plus One", "Message", "Code", "Group"];
+const GROUP_LABEL: Record<GuestGroup, string> = { guest: "Guest", family: "Family", entourage: "Entourage" };
 const range = (tab: string, a1: string) => `'${tab}'!${a1}`;
 
 export class SheetsNotConfiguredError extends Error {
@@ -122,12 +125,12 @@ function ensureTabs(): Promise<void> {
 
       const heads = await sheets.spreadsheets.values.batchGet({
         spreadsheetId,
-        ranges: [range(GUESTS_TAB, "A1:F1"), range(SHEET_TAB, "A1:F1")],
+        ranges: [range(GUESTS_TAB, "A1:F1"), range(SHEET_TAB, "A1:G1")],
       });
       const empty = (i: number) => (heads.data.valueRanges?.[i]?.values?.[0] ?? []).every((c) => !String(c ?? "").trim());
       const data = [
         empty(0) && { range: range(GUESTS_TAB, "A1:F1"), values: [GUEST_HEADERS] },
-        empty(1) && { range: range(SHEET_TAB, "A1:F1"), values: [RSVP_HEADERS] },
+        empty(1) && { range: range(SHEET_TAB, "A1:G1"), values: [RSVP_HEADERS] },
       ].filter(Boolean) as sheets_v4.Schema$ValueRange[];
       if (data.length) {
         await sheets.spreadsheets.values.batchUpdate({ spreadsheetId, requestBody: { valueInputOption: "RAW", data } });
@@ -228,6 +231,8 @@ export type RsvpRow = {
   plusOneName: string;
   message: string;
   code: string;
+  /** "Guest", "Family" or "Entourage" ("" on rows from before the Group column). */
+  group: string;
 };
 
 function parseRsvps(values: unknown[][] | null | undefined): RsvpRow[] {
@@ -240,6 +245,7 @@ function parseRsvps(values: unknown[][] | null | undefined): RsvpRow[] {
       plusOneName: cell(r[3]),
       message: cell(r[4]),
       code: normalizeCode(cell(r[5])) ?? "",
+      group: cell(r[6]),
     }))
     .filter((r) => r.name || r.timestamp);
 }
@@ -247,7 +253,7 @@ function parseRsvps(values: unknown[][] | null | undefined): RsvpRow[] {
 export async function listRsvps(): Promise<RsvpRow[]> {
   await ensureTabs();
   const { sheets, spreadsheetId } = getClient();
-  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: range(SHEET_TAB, "A2:F") });
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: range(SHEET_TAB, "A2:G") });
   return parseRsvps(res.data.values);
 }
 
@@ -257,7 +263,7 @@ export async function findInvite(code: string): Promise<{ guest: Guest; reply: R
   const { sheets, spreadsheetId } = getClient();
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId,
-    ranges: [range(GUESTS_TAB, "A2:F"), range(SHEET_TAB, "A2:F")],
+    ranges: [range(GUESTS_TAB, "A2:F"), range(SHEET_TAB, "A2:G")],
   });
   const guest = parseGuests(res.data.valueRanges?.[0]?.values).find((g) => g.code === code);
   if (!guest) return null;
@@ -279,12 +285,13 @@ export async function saveRsvp(guest: Guest, rsvp: Rsvp, previous: RsvpRow | nul
     rsvp.plusOneName,
     rsvp.message,
     guest.code,
+    GROUP_LABEL[guest.group],
   ];
 
   if (previous) {
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: range(SHEET_TAB, `A${previous.row}:F${previous.row}`),
+      range: range(SHEET_TAB, `A${previous.row}:G${previous.row}`),
       valueInputOption: "RAW",
       requestBody: { values: [row] },
     });
@@ -293,10 +300,88 @@ export async function saveRsvp(guest: Guest, rsvp: Rsvp, previous: RsvpRow | nul
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: range(SHEET_TAB, "A:F"),
+    range: range(SHEET_TAB, "A:G"),
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [row] },
   });
   return { updated: false };
+}
+
+/**
+ * Refresh in /admin: family and entourage don't reply, so they're listed in
+ * the RSVPs tab as coming ("Yes"), labelled Family or Entourage in the Group
+ * column; guest replies without a label get "Guest". If someone is no longer
+ * family or entourage (moved to Guest, or removed from the list), the row
+ * added for them is taken out again. A guest's own reply is never removed.
+ */
+export async function syncSavedSeats(): Promise<{ added: number; removed: number }> {
+  await ensureTabs();
+  const { sheets, spreadsheetId } = getClient();
+  const res = await sheets.spreadsheets.values.batchGet({
+    spreadsheetId,
+    ranges: [range(GUESTS_TAB, "A2:F"), range(SHEET_TAB, "A1:G")],
+  });
+  const guests = parseGuests(res.data.valueRanges?.[0]?.values);
+  const sheetRows = res.data.valueRanges?.[1]?.values ?? [];
+  const rsvps = parseRsvps(sheetRows.slice(1));
+
+  const saved = new Map(guests.filter((g) => g.group !== "guest" && g.code).map((g) => [g.code, g]));
+  const byCode = new Map(rsvps.filter((r) => r.code).map((r) => [r.code, r]));
+  const isAuto = (r: RsvpRow) => r.group === GROUP_LABEL.family || r.group === GROUP_LABEL.entourage;
+  const plusOf = (g: Guest) => g.plusOneName || (g.plusOne ? "+1" : "");
+
+  const updates: sheets_v4.Schema$ValueRange[] = [];
+  if (cell(sheetRows[0]?.[6]) !== "Group") updates.push({ range: range(SHEET_TAB, "G1"), values: [["Group"]] });
+
+  const toAdd: string[][] = [];
+  for (const g of saved.values()) {
+    const label = GROUP_LABEL[g.group];
+    const r = byCode.get(g.code);
+    if (!r) {
+      toAdd.push(["", g.name, "Yes", plusOf(g), "", g.code, label]);
+    } else if (isAuto(r)) {
+      // keep the added row in step with the guest list
+      if (r.name !== g.name || !r.attending || r.plusOneName !== plusOf(g) || r.group !== label) {
+        updates.push({ range: range(SHEET_TAB, `B${r.row}:D${r.row}`), values: [[g.name, "Yes", plusOf(g)]] });
+        updates.push({ range: range(SHEET_TAB, `G${r.row}`), values: [[label]] });
+      }
+    } else if (r.group !== label) {
+      // they replied as a guest before becoming family/entourage: keep their reply, relabel it
+      updates.push({ range: range(SHEET_TAB, `G${r.row}`), values: [[label]] });
+    }
+  }
+  for (const r of rsvps) {
+    if (!r.group && !saved.has(r.code)) updates.push({ range: range(SHEET_TAB, `G${r.row}`), values: [[GROUP_LABEL.guest]] });
+  }
+  const toRemove = rsvps.filter((r) => isAuto(r) && !saved.has(r.code)).map((r) => r.row);
+
+  if (updates.length) {
+    await sheets.spreadsheets.values.batchUpdate({ spreadsheetId, requestBody: { valueInputOption: "RAW", data: updates } });
+  }
+  if (toRemove.length) {
+    const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "sheets.properties(sheetId,title)" });
+    const sheetId = meta.data.sheets?.find((s) => s.properties?.title === SHEET_TAB)?.properties?.sheetId;
+    if (sheetId != null) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          // bottom first, so the row numbers above don't shift
+          requests: toRemove
+            .sort((a, b) => b - a)
+            .map((row) => ({ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: row - 1, endIndex: row } } })),
+        },
+      });
+    }
+  }
+  if (toAdd.length) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: range(SHEET_TAB, "A:G"),
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: toAdd },
+    });
+  }
+  return { added: toAdd.length, removed: toRemove.length };
 }

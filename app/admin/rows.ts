@@ -10,6 +10,8 @@ export type AdminRow = {
   code: string;
   plusOneAllowed: boolean;
   onList: boolean;
+  /** Has a row in the RSVPs tab (a reply, or the row Refresh adds for family/entourage). */
+  inRsvpTab: boolean;
   /** "family" and "entourage": no RSVP needed, their seat is saved automatically. */
   status: "yes" | "no" | "waiting" | "family" | "entourage";
   /** The +1 who's coming: from the guest's reply, or (family/entourage, who don't reply) from the guest list. */
@@ -35,6 +37,7 @@ export function buildAdminRows(guests: Guest[], rsvps: RsvpRow[]): AdminRow[] {
       code: g.code,
       plusOneAllowed: g.plusOne && g.group === "guest",
       onList: true,
+      inRsvpTab: Boolean(r),
       status: g.group !== "guest" ? g.group : r ? (r.attending ? "yes" : "no") : "waiting",
       // family/entourage don't reply, so a +1 on the list counts as coming
       plusOneName: noRsvp ? g.plusOneName || (g.plusOne ? "+1" : "") : r?.attending ? r.plusOneName : "",
@@ -53,6 +56,7 @@ export function buildAdminRows(guests: Guest[], rsvps: RsvpRow[]): AdminRow[] {
       code: "",
       plusOneAllowed: Boolean(r.plusOneName),
       onList: false,
+      inRsvpTab: true,
       status: r.attending ? "yes" : "no",
       plusOneName: r.attending ? r.plusOneName : "",
       expectedPlusOne: "",

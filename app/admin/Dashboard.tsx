@@ -55,6 +55,8 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
   const canShare = useSyncExternalStore(noop, canShareNow, cannotShareOnServer);
   const [notice, setNotice] = useState<string | null>(null);
   const needsLink = rows.filter((r) => r.onList && !r.code).length;
+  // family/entourage not yet listed in the RSVPs tab (Refresh adds them)
+  const needsSeat = rows.filter((r) => (r.status === "family" || r.status === "entourage") && r.code && !r.inRsvpTab).length;
 
   const totals = useMemo(() => {
     const listed = rows.filter((r) => r.onList);
@@ -121,10 +123,12 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
             startRefresh(async () => {
               // New guests get their codes here (one deliberate action), then the list reloads.
               const res = await createMissingLinks();
-              setNotice(
-                res.error ??
-                  (res.added ? `Created ${res.added} new personal link${res.added === 1 ? "" : "s"}.` : "Up to date."),
-              );
+              const done = [
+                res.added && `Created ${res.added} new personal link${res.added === 1 ? "" : "s"}.`,
+                res.seatsAdded && `Added ${res.seatsAdded} family/entourage to the RSVPs tab.`,
+                res.seatsRemoved && `Removed ${res.seatsRemoved} who are no longer family/entourage from the RSVPs tab.`,
+              ].filter(Boolean);
+              setNotice(res.error ?? (done.length ? done.join(" ") : "Up to date."));
               router.refresh();
             })
           }
@@ -153,6 +157,12 @@ export function Dashboard({ rows, sheetUrl, siteUrl, error }: Props) {
         <p className="mx-auto mt-4 max-w-xl rounded-2xl bg-candle-soft px-5 py-3 text-center text-[1rem] text-ink">
           {needsLink === 1 ? "1 new guest doesn't" : `${needsLink} new guests don't`} have a link yet. Press{" "}
           <strong>Refresh</strong> to create {needsLink === 1 ? "it" : "them"}.
+        </p>
+      )}
+      {!error && needsLink === 0 && needsSeat > 0 && (
+        <p className="mx-auto mt-4 max-w-xl rounded-2xl bg-candle-soft px-5 py-3 text-center text-[1rem] text-ink">
+          {needsSeat === 1 ? "1 family/entourage invitation isn't" : `${needsSeat} family/entourage invitations aren't`} in the
+          RSVPs tab yet. Press <strong>Refresh</strong> to add {needsSeat === 1 ? "it" : "them"}.
         </p>
       )}
 
