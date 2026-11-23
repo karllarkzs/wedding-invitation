@@ -78,7 +78,7 @@ export const wedding = {
    */
   entourage: {
     parents: {
-      groom: ["Atty. Felix Alvin B. Melecio", "Mrs. Hedy C. Melecio"],
+      groom: ["Atty. Felix Alvin B. Melecio", "Mrs. Heidy C. Melecio"],
       bride: ["Mr. Alvin O. Capoy", "Mrs. Maita B. Capoy"],
     },
     grandmothers: {
