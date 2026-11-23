@@ -70,7 +70,7 @@ export function Hero() {
                 <span className="block text-[4.6rem] sm:text-[5.4rem]">
                   <InkReveal delay={0.35}>{partnerOne}</InkReveal>
                 </span>
-                <span className="gold-foil block py-0.5 text-[2.8rem] sm:text-[3.4rem]" aria-hidden="true">
+                <span className="block py-0.5 text-[2.8rem] text-gold-deep sm:text-[3.4rem]" aria-hidden="true">
                   <InkReveal delay={1.05} duration={0.6}>
                     &amp;
                   </InkReveal>

@@ -265,20 +265,20 @@
     );
     background-size: 260% 100%;
     background-position: 130% 0;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    /* plain gold where text can't be filled with a gradient (some older phones) */
+    color: #7a6035;
+  }
+  @supports (-webkit-background-clip: text) or (background-clip: text) {
+    .title-display {
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
   }
   /* Petals at the screen edges sway gently */
   .petal-sway {
     animation: petal-sway 12s ease-in-out infinite alternate;
     will-change: transform;
-  }
-  .gold-foil {
-    background: linear-gradient(100deg, #8a6d3f 0%, #c8ad78 28%, #8c7043 52%, #d6c08f 74%, #8a6d3f 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
   }
   .link-hairline {
     background-image: linear-gradient(currentColor, currentColor);
