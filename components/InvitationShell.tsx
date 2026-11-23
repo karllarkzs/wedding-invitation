@@ -6,6 +6,7 @@ import { PAUSE_MUSIC, RESUME_MUSIC } from "@/lib/music-events";
 import { BloomIntro } from "./BloomIntro";
 import { InviteProvider } from "./InviteContext";
 import { MusicToggle } from "./MusicToggle";
+import { ScrollCue } from "./ScrollCue";
 import { OpenedContext } from "./ui/Reveal";
 
 type Props = {
@@ -167,6 +168,8 @@ export function InvitationShell({ children, partnerOne, partnerTwo, shortDate, m
           <div inert={!opened} className="overflow-x-clip">
             {children}
           </div>
+
+          {opened && <ScrollCue />}
 
           {musicSrc && (
             <>

@@ -120,19 +120,7 @@ export function Hero() {
           </div>
         </Reveal>
       </div>
-
-      <Reveal delay={0.9} className="mt-10 flex justify-center">
-        <a
-          href="#countdown"
-          className="group flex flex-col items-center gap-2 font-display text-[0.68rem] font-semibold tracking-[0.3em] text-ink-soft"
-        >
-          SCROLL
-          <span
-            aria-hidden="true"
-            className="h-10 w-px bg-gradient-to-b from-gold to-transparent transition-transform group-hover:translate-y-1"
-          />
-        </a>
-      </Reveal>
+      {/* the "Scroll" hint is pinned to the bottom of the screen instead (ScrollCue), so small phones see it too */}
     </section>
   );
 }

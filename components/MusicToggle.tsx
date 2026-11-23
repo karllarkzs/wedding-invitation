@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 type Props = { playing: boolean; onToggle: () => void };
 
-/** Small floating mute / unmute button. */
+/** Small floating mute / unmute button, bottom-left (the host's badge sits bottom-right). */
 export function MusicToggle({ playing, onToggle }: Props) {
   return (
     <motion.button
@@ -12,7 +12,7 @@ export function MusicToggle({ playing, onToggle }: Props) {
       onClick={onToggle}
       aria-pressed={playing}
       aria-label={playing ? "Pause background music" : "Play background music"}
-      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 grid size-12 place-items-center rounded-full bg-white/95 text-gold-deep shadow-[0_10px_24px_-12px_rgba(70,63,82,0.5),inset_0_0_0_1px_rgba(180,152,103,0.55)] transition-colors hover:bg-candle-soft"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 z-40 grid size-12 place-items-center rounded-full bg-white/95 text-gold-deep shadow-[0_10px_24px_-12px_rgba(70,63,82,0.5),inset_0_0_0_1px_rgba(180,152,103,0.55)] transition-colors hover:bg-candle-soft"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 1, duration: 0.6 }}
